@@ -46,6 +46,7 @@ class Stats(commands.Cog):
             title="📊 Generator Statistics",
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
 
         # Generate counts
         embed.add_field(
@@ -61,10 +62,10 @@ class Stats(commands.Cog):
         embed.add_field(
             name="📦 Current Stock",
             value=(
-                f"🟢 Free: **{db.stock_count('free')}**   "
-                f"🔵 Free+: **{db.stock_count('free+')}**   "
-                f"⭐ Premium: **{db.stock_count('premium')}**\n"
-                f"Total: **{total_stock}** accounts"
+                f"🟢 Free `{db.stock_count('free')}`  •  "
+                f"🔵 Free+ `{db.stock_count('free+')}`  •  "
+                f"⭐ Premium `{db.stock_count('premium')}`\n"
+                f"**Total:** `{total_stock}` accounts"
             ),
             inline=False,
         )
@@ -98,14 +99,14 @@ class Stats(commands.Cog):
         CAT_EMOJI = {"free": "🟢", "free+": "🔵", "premium": "⭐"}
         lines = [
             f"{CAT_EMOJI.get(e['category'], '•')} <@{e['user_id']}> — "
-            f"**{e['category']}** • <t:{e['timestamp']}:R>"
+            f"`{e['category']}` • <t:{e['timestamp']}:R>"
             for e in logs
         ]
         embed = discord.Embed(
             color=0x5865F2,
-            title=f"📋 Recent Generates — last {len(logs)}",
+            title=f"📋 Recent Generates — Last {len(logs)}",
             description="\n".join(lines)[:4096],
-        ).set_footer(text="Generator")
+        ).set_footer(text=f"Generator • Showing {len(logs)} most recent entries")
         embed.timestamp = discord.utils.utcnow()
         await interaction.response.send_message(embeds=[embed], ephemeral=True)
 
@@ -126,12 +127,19 @@ class Stats(commands.Cog):
             description="Discord account generator bot.",
         )
         embed.set_thumbnail(url=bot.user.display_avatar.url)
-        embed.add_field(name="🏓 Latency",       value=f"{round(bot.latency * 1000)}ms", inline=True)
-        embed.add_field(name="⏱️ Uptime",         value=_uptime_str(),                   inline=True)
-        embed.add_field(name="🔧 Cogs Loaded",    value=str(len(cog_names)),             inline=True)
-        embed.add_field(name="📡 Servers",        value=str(len(bot.guilds)),            inline=True)
-        embed.add_field(name="👥 Total Users",    value=f"{total_users:,}",              inline=True)
-        embed.add_field(name="📬 Commands",       value=str(len(bot.tree.get_commands())), inline=True)
+        embed.set_author(name="Powered by discord.py", icon_url=bot.user.display_avatar.url)
+
+        # Latency / uptime
+        embed.add_field(name="🏓 Latency", value=f"{round(bot.latency * 1000)}ms", inline=True)
+        embed.add_field(name="⏱️ Uptime",  value=_uptime_str(),                   inline=True)
+        embed.add_field(name="🔧 Cogs Loaded", value=str(len(cog_names)),         inline=True)
+
+        # Counts
+        embed.add_field(name="📡 Servers",     value=str(len(bot.guilds)),              inline=True)
+        embed.add_field(name="👥 Total Users", value=f"{total_users:,}",                inline=True)
+        embed.add_field(name="📬 Commands",    value=str(len(bot.tree.get_commands())), inline=True)
+
+        # Versions
         embed.add_field(
             name="🐍 Python",
             value=f"`{platform.python_version()}`",
@@ -142,9 +150,11 @@ class Stats(commands.Cog):
             value=f"`{_discord.__version__}`",
             inline=True,
         )
+        embed.add_field(name="\u200b", value="\u200b", inline=True)
+
         embed.add_field(
             name="📂 Modules",
-            value=", ".join(cog_names) or "None",
+            value=", ".join(f"`{c}`" for c in cog_names) or "None",
             inline=False,
         )
         embed.set_footer(text="Generator")
