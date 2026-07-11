@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "hP5s7a_njFsBuDkiRfxH0"
+uri = "file://exports/generator-bot-source.zip"
+type = "unspecified"
+title = "Generator Bot — Source Code"

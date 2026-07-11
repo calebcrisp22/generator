@@ -1,0 +1,16 @@
+2026-07-11 06:32:50 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
+2026-07-11 06:32:50 [INFO] discord.client: logging in using static token
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: generate
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: stock
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: drops
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: vouches
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: subscriptions
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: admin
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: profile
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: blacklist
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: stats
+2026-07-11 06:32:50 [INFO] generator: Loaded cog: utility
+2026-07-11 06:32:50 [INFO] generator: Synced 47 slash command(s)
+2026-07-11 06:32:53 [INFO] generator: Logged in as Generator#8256 (1524571104419643392)
+2026-07-11 06:32:53 [INFO] generator: Bot is ready!
+2026-07-11 06:32:53 [INFO] generator: Rolling backup created: backup-20260711-063253.zip
