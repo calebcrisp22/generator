@@ -186,7 +186,7 @@ class Generate(commands.Cog):
 
         # ── Open DM first — if closed, bail before popping stock ───────────────
         try:
-            status_msg = await interaction.user.send("⌛ **Processing account...** Fetching details...")
+            status_msg = await interaction.user.send("⏳ **Processing Your Account** • Fetching details...")
         except discord.Forbidden:
             embed = discord.Embed(
                 color=0xFEE75C, title="⚠️ Could Not Send DM",
@@ -237,7 +237,7 @@ class Generate(commands.Cog):
         # ── Channel embed (card-style, no credentials) ─────────────────────────
         channel_embed = discord.Embed(
             color=color,
-            title=f"🎉 {CATEGORY_LABELS[category]} Account Claimed",
+            title=f"✨ {CATEGORY_LABELS[category]} Account Claimed ✨",
             description=f"<@{interaction.user.id}> just generated an account! Check your DMs 📬",
         )
         channel_embed.set_author(name=interaction.guild.name, icon_url=guild_icon)
@@ -250,10 +250,10 @@ class Generate(commands.Cog):
 
         # ── DM embed (full card) ────────────────────────────────────────────────
         dm_description = "\n".join(detail_lines) if detail_lines else "\u200b"
-        title = f"🎁 Account Delivered — {username}" if username else f"🎁 Account Delivered — {CATEGORY_LABELS[category]}"
+        title = f"🎁✨ Account Delivered — {username or CATEGORY_LABELS[category]} ✨🎁"
 
         dm_embed = discord.Embed(color=color, title=title, description=dm_description)
-        dm_embed.set_author(name=f"{interaction.guild.name} • {CATEGORY_LABELS[category]} Tier", icon_url=guild_icon)
+        dm_embed.set_author(name=f"{interaction.guild.name} ✨ {CATEGORY_LABELS[category].upper()}", icon_url=guild_icon)
         dm_embed.set_thumbnail(url=guild_icon)
         dm_embed.set_footer(text="Generator • Do NOT share your credentials with anyone")
         dm_embed.timestamp = discord.utils.utcnow()
@@ -262,6 +262,7 @@ class Generate(commands.Cog):
             dm_embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
 
         dm_embed.add_field(name="🔑 Login Credentials", value=f"```{credentials}```", inline=False)
+        dm_embed.add_field(name="", value="━━━━━━━━━━━━━━━━━━", inline=False)
         if skin_link:
             dm_embed.add_field(name="🎨 Skin Link", value=skin_link, inline=False)
         dm_embed.add_field(name="📦 Tier Stock Remaining", value=f"`{stock_bar}` {left} left", inline=False)
@@ -301,9 +302,9 @@ class Generate(commands.Cog):
             delay = 10.0
         await asyncio.sleep(1.3)
         if delay > 0:
-            await status_msg.edit(content="⌛ **Adding account to API...** This may take a moment...")
+            await status_msg.edit(content="🔄 **Adding Account to API...** This may take a moment...")
             await asyncio.sleep(delay)
-        await status_msg.edit(content="✅ **Account ready!** Here are your details below 👇")
+        await status_msg.edit(content="✅ **Account Ready!** Details below 👇")
 
         # ── Assemble payloads ──────────────────────────────────────────────────
         dm_payload: dict = {"embeds": [dm_embed], "view": view}
