@@ -43,11 +43,12 @@ class Profile(commands.Cog):
         status_color = {"none": 0x99AAB5, "free": 0x57F287, "free+": 0x5865F2, "premium": 0xFEE75C}
         embed = discord.Embed(
             color=status_color.get(tier, 0x5865F2),
-            title=f"{TIER_EMOJI.get(tier, '⬜')} {target.display_name}'s Profile{rank_badge}",
+            title=f"{TIER_EMOJI.get(tier, '⬜')} {target.display_name}'s Profile {rank_badge}",
         )
+        embed.set_author(name="Generator Profile", icon_url=target.display_avatar.url)
         embed.set_thumbnail(url=target.display_avatar.url)
         embed.add_field(name="🏷️ Subscription",
-                        value=f"**{tier.capitalize()}** ({'🟢 Active' if is_active else '⚪ Inactive'})", inline=True)
+                        value=f"{'💎 Active Premium' if is_active and tier == 'premium' else '✨ Active Free+' if is_active and tier == 'free+' else '📦 Active Free' if is_active else '⚪ Inactive'} • {tier.title()}", inline=True)
         embed.add_field(name="⏳ Expires",  value=expiry_str, inline=True)
         embed.add_field(name="🪙 Tokens",   value=str(u.get("tokens", 0)), inline=True)
         embed.add_field(name="💬 Messages", value=str(u.get("messages", 0)), inline=True)
@@ -64,8 +65,9 @@ class Profile(commands.Cog):
         embed = discord.Embed(
             color=0x5865F2,
             title=f"📨 Invites — {target.display_name}",
-            description=f"{target.mention} has invited **{count}** member(s).",
+            description=f"{target.mention} has invited **{count}** member{'s' if count != 1 else ''}! 🎉",
         ).set_footer(text="Generator")
+        embed.set_author(name="Generator Invites", icon_url=target.display_avatar.url)
         embed.set_thumbnail(url=target.display_avatar.url)
         embed.timestamp = discord.utils.utcnow()
         await interaction.response.send_message(embeds=[embed])
@@ -75,12 +77,13 @@ class Profile(commands.Cog):
         lb = db.get_inviter_leaderboard()
         embed = discord.Embed(
             color=0xFEE75C,
-            title="🏆 Invite Leaderboard",
+            title=f"🏆 Invite Leaderboard",
         ).set_footer(text="Generator • Top inviters this season")
+        embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
         embed.timestamp = discord.utils.utcnow()
 
         if not lb:
-            embed.description = "No invite data yet."
+            embed.description = "📭 No invite data yet. Start inviting to claim the leaderboard!"
         else:
             medals = ["🥇", "🥈", "🥉"] + ["🔹"] * 20
             top_count = lb[0]["count"] if lb else 1
