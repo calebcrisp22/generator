@@ -3,3 +3,4 @@ python-dotenv==1.0.1
 aiohttp
 discord.py==2.4.0
 python-dotenv==1.0.1
+PyNaCl
