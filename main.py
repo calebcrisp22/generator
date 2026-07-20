@@ -58,6 +58,7 @@ intents.invites = True
 intents.dm_messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot._ready_time = time.time()
 
 # ── Invite cache ───────────────────────────────────────────────────────────────
 invite_cache: dict[int, dict[str, int]] = {}
