@@ -1,11 +1,14 @@
 """
-utility.py — /announce  /dm  /help
+utility.py — /announce  /dm  /help  /status  /info
 """
+
+import time
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
+import database as db
 import utils
 
 # ── Command reference used by /help ───────────────────────────────────────────
@@ -82,6 +85,23 @@ HELP_SECTIONS = {
         ("`/dm`",             "DM a user through the bot (owner)"),
     ],
 }
+
+
+def format_uptime(seconds: int) -> str:
+    """Format seconds to readable uptime string."""
+    days = int(seconds // 86400)
+    hours = int((seconds % 86400) // 3600)
+    minutes = int((seconds % 3600) // 60)
+
+    parts = []
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0:
+        parts.append(f"{minutes}m")
+
+    return " ".join(parts) if parts else "< 1m"
 
 
 class Utility(commands.Cog):
@@ -227,6 +247,62 @@ class Utility(commands.Cog):
             text=f"Generator • {len(self.bot.tree.get_commands())} commands total",
         )
         embed.timestamp = discord.utils.utcnow()
+        await interaction.response.send_message(embeds=[embed], ephemeral=True)
+
+
+    # /status
+    @app_commands.command(name="status", description="Check bot health and current stock levels.")
+    @app_commands.guild_only()
+    async def status(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+        # Get metrics
+        uptime_seconds = time.time() - self.bot._ready_time if hasattr(self.bot, '_ready_time') else 0
+        uptime_str = format_uptime(uptime_seconds)
+
+        stock_info = []
+        for cat in ["free", "free+", "premium"]:
+            count = db.stock_count(cat)
+            stock_info.append(f"• **{cat.upper()}**: {count} accounts")
+
+        embed = discord.Embed(
+            color=0x57F287,
+            title="✅ Bot Status",
+            description="System health and current metrics",
+        )
+        embed.add_field(name="📊 Uptime", value=uptime_str, inline=True)
+        embed.add_field(name="👥 Members", value=str(sum(g.member_count for g in self.bot.guilds)), inline=True)
+        embed.add_field(name="📦 Stock Levels", value="\n".join(stock_info), inline=False)
+        embed.set_footer(text="Generator • All systems operational")
+        embed.timestamp = discord.utils.utcnow()
+
+        await interaction.followup.send(embeds=[embed])
+
+    # /info
+    @app_commands.command(name="info", description="View bot information and features.")
+    @app_commands.guild_only()
+    async def info(self, interaction: discord.Interaction):
+        features = [
+            "✨ Account distribution with multiple tiers",
+            "📦 Real-time stock management",
+            "🎁 Automatic drops system",
+            "👤 User profiles & invite tracking",
+            "💬 Community vouches",
+            "🔔 Subscription tiers (Free, Free+, Premium)",
+            "📊 Activity statistics & leaderboards",
+            "⚙️ Full customization & admin controls",
+        ]
+
+        embed = discord.Embed(
+            color=0x5865F2,
+            title="🤖 Generator Bot",
+            description="A feature-rich account distribution system for Discord communities.",
+        )
+        embed.add_field(name="✨ Features", value="\n".join(features), inline=False)
+        embed.add_field(name="📖 Get Started", value="Use `/help` to see all commands", inline=False)
+        embed.set_footer(text="Generator • Powered by discord.py")
+        embed.timestamp = discord.utils.utcnow()
+
         await interaction.response.send_message(embeds=[embed], ephemeral=True)
 
 
