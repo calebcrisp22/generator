@@ -109,7 +109,7 @@ async def apply_presence():
     try:
         await bot.change_presence(
             activity=discord.Activity(type=act_type, name=text),
-            status=discord.Status.online,
+            status=discord.Status.do_not_disturb,
         )
     except Exception:
         pass
