@@ -149,8 +149,9 @@ class Admin(commands.Cog):
     async def checkchannel(self, interaction: discord.Interaction):
         if not await utils.owner_only(interaction):
             return
-        gen_ch  = db.get_config("gen_channel")
-        log_ch  = db.get_config("log_channel")
+        gen_ch      = db.get_config("gen_channel")
+        log_ch      = db.get_config("log_channel")
+        premium_ch  = db.get_config("premium_channel")
         embed   = discord.Embed(color=0x5865F2, title="📋 Channel Settings")
         embed.add_field(
             name="Gen Channel",
@@ -160,6 +161,11 @@ class Admin(commands.Cog):
         embed.add_field(
             name="Log Channel",
             value=f"<#{log_ch}>" if log_ch else "Disabled",
+            inline=True,
+        )
+        embed.add_field(
+            name="Premium Channel",
+            value=f"<#{premium_ch}>" if premium_ch else "Not set",
             inline=True,
         )
         role_lines = []
@@ -204,6 +210,26 @@ class Admin(commands.Cog):
             description=(
                 f"New members will get a welcome card in {channel.mention}."
                 if channel else "Welcome cards are now disabled."
+            ),
+        ).set_footer(text="Generator")
+        embed.timestamp = discord.utils.utcnow()
+        await interaction.response.send_message(embeds=[embed], ephemeral=True)
+
+    # /setpremiumchannel — set the channel linked from the "Upgrade Premium" button
+    @app_commands.command(name="setpremiumchannel",
+                          description="[Owner] Set the channel the \"Upgrade Premium\" button links to.")
+    @app_commands.describe(channel="Channel to link users to for premium purchases (leave blank to disable)")
+    async def setpremiumchannel(self, interaction: discord.Interaction,
+                                channel: discord.TextChannel = None):
+        if not await utils.owner_only(interaction):
+            return
+        db.set_config("premium_channel", str(channel.id) if channel else "")
+        embed = discord.Embed(
+            color=0x57F287, title="✅ Premium Channel Set",
+            description=(
+                f"The \"Upgrade Premium\" button will now link to {channel.mention}."
+                if channel else
+                "The \"Upgrade Premium\" button link has been disabled — it will show instructions instead."
             ),
         ).set_footer(text="Generator")
         embed.timestamp = discord.utils.utcnow()

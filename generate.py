@@ -288,10 +288,24 @@ class Generate(commands.Cog):
             label="How to Link", style=discord.ButtonStyle.secondary,
             custom_id="how_to_link", emoji="❓",
         ))
-        buttons.append(discord.ui.Button(
-            label="Upgrade Premium", style=discord.ButtonStyle.link,
-            url=f"https://discord.com/channels/{interaction.guild_id}", emoji="⬆️",
-        ))
+
+        # "Upgrade Premium" must be a link button pointing at a fully-formed
+        # Discord URL (guild_id AND channel_id), otherwise Discord rejects the
+        # whole message with a 400 "Not a well formed URL" error. If no
+        # premium channel is configured, fall back to a non-link button that
+        # shows instructions instead of sending a broken URL.
+        premium_channel_id = db.get_config("premium_channel")
+        if premium_channel_id:
+            buttons.append(discord.ui.Button(
+                label="Upgrade Premium", style=discord.ButtonStyle.link,
+                url=f"https://discord.com/channels/{interaction.guild_id}/{premium_channel_id}",
+                emoji="⬆️",
+            ))
+        else:
+            buttons.append(discord.ui.Button(
+                label="Upgrade Premium", style=discord.ButtonStyle.secondary,
+                custom_id="upgrade_premium", emoji="⬆️",
+            ))
 
         view = discord.ui.View(timeout=None)
         for btn in buttons[:5]:
@@ -455,6 +469,17 @@ class GenerateButtonHandler(commands.Cog):
                     "",
                     "⚠️ Only change the password if the account notes confirm it is safe.",
                 ]),
+            ).set_footer(text="Generator")
+            await interaction.response.send_message(embeds=[embed], ephemeral=True)
+
+        elif custom_id == "upgrade_premium":
+            embed = discord.Embed(
+                color=0xFEE75C,
+                title="⬆️ Upgrade to Premium",
+                description=(
+                    "Premium hasn't been configured for this server yet. "
+                    "Ask a staff member to set it up with `/setpremiumchannel`."
+                ),
             ).set_footer(text="Generator")
             await interaction.response.send_message(embeds=[embed], ephemeral=True)
 
