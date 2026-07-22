@@ -12,6 +12,7 @@ Faithful Python port of generate.js including:
 """
 
 import asyncio
+import logging
 import time
 import discord
 from discord import app_commands
@@ -19,6 +20,8 @@ from discord.ext import commands
 
 import database as db
 import utils
+
+log = logging.getLogger("generator.generate")
 
 _DEFAULT_COLORS = {"free": 0x57F287, "free+": 0x5865F2, "premium": 0xFEE75C}
 CATEGORY_LABELS = {"free": "🟢 Free", "free+": "🔵 Free+", "premium": "⭐ Premium"}
@@ -320,30 +323,93 @@ class Generate(commands.Cog):
                 pass
 
         # ── Deliver ────────────────────────────────────────────────────────────
-        try:
-            await interaction.user.send(**dm_payload)
-            delivered = True
-        except Exception:
-            delivered = False
+        # Discord DM sends occasionally hit transient API errors (rate limits,
+        # gateway hiccups, server-side timeouts). Those are retried a couple of
+        # times with exponential backoff. discord.Forbidden (DMs closed / bot
+        # blocked by the user) is a permanent failure and is never retried.
+        delivered = False
+        permanent_failure = False
+        last_error: Exception | None = None
+        attempts_made = 0
+        max_attempts = 3
+
+        for attempt in range(1, max_attempts + 1):
+            attempts_made = attempt
+            try:
+                await interaction.user.send(**dm_payload)
+                delivered = True
+                break
+            except discord.Forbidden as exc:
+                permanent_failure = True
+                last_error = exc
+                log.warning(
+                    "DM delivery to user %s failed permanently (Forbidden — DMs closed "
+                    "or bot blocked): %s", interaction.user.id, exc,
+                )
+                break
+            except (discord.HTTPException, asyncio.TimeoutError, OSError) as exc:
+                last_error = exc
+                log.warning(
+                    "DM delivery to user %s failed on attempt %d/%d (%s: %s) — %s",
+                    interaction.user.id, attempt, max_attempts, type(exc).__name__, exc,
+                    "retrying" if attempt < max_attempts else "giving up",
+                )
+                if attempt < max_attempts:
+                    await asyncio.sleep(2 ** (attempt - 1))  # 1s, 2s backoff
+            except Exception as exc:
+                # Unknown error type — log full context but don't blindly retry.
+                last_error = exc
+                log.exception(
+                    "DM delivery to user %s failed with an unexpected error", interaction.user.id
+                )
+                break
 
         if delivered:
+            log.info(
+                "DM delivered to user %s for category %s (attempt %d/%d)",
+                interaction.user.id, category, attempts_made, max_attempts,
+            )
             db.log_generate(str(interaction.user.id), category)
             await interaction.followup.send(**channel_payload)
         else:
             # Restore stock and refund cooldown
+            log.error(
+                "Giving up on DM delivery to user %s after %d attempt(s); restoring "
+                "stock for category %s. permanent=%s last_error=%r",
+                interaction.user.id, attempts_made, category, permanent_failure, last_error,
+            )
             db.restore_stock(category, raw)
             db.update_user(str(interaction.user.id), {
                 f"last_gen_{cat_key}": last_gen,
                 "last_gen": user.get("last_gen", 0),
             })
-            await status_msg.edit(
-                content="⚠️ Couldn't deliver your account (your DMs may have just closed). "
-                        "It was returned to stock — please run `/generate` again."
-            )
+
+            if permanent_failure:
+                status_text = (
+                    "⚠️ Couldn't deliver your account — your DMs appear to be closed, or you've "
+                    "blocked the bot. Enable **\"Allow Direct Messages from Server Members\"** in "
+                    "Privacy Settings, then run `/generate` again. It was returned to stock."
+                )
+                fail_description = (
+                    f"<@{interaction.user.id}> we couldn't DM you your account because your DMs are "
+                    f"closed or the bot is blocked. It was returned to stock — please fix your DM "
+                    f"settings and try **/generate** again."
+                )
+            else:
+                status_text = (
+                    "⚠️ Couldn't deliver your account after a few attempts (temporary Discord API "
+                    "issue). It was returned to stock — please run `/generate` again in a moment."
+                )
+                fail_description = (
+                    f"<@{interaction.user.id}> we hit a temporary Discord API issue while delivering "
+                    f"your account, so it was returned to stock. Please try **/generate** again in a "
+                    f"moment."
+                )
+
+            await status_msg.edit(content=status_text)
             fail_embed = discord.Embed(
                 color=0xFEE75C, title="⚠️ Delivery Failed",
-                description=f"<@{interaction.user.id}> we couldn't finish delivering your account, "
-                            f"so it was returned to stock. Please try **/generate** again.",
+                description=fail_description,
             )
             await interaction.followup.send(embeds=[fail_embed])
 
