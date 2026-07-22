@@ -13,7 +13,10 @@ Faithful Python port of generate.js including:
 
 import asyncio
 import logging
+import re
 import time
+from urllib.parse import urlparse
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -25,6 +28,54 @@ log = logging.getLogger("generator.generate")
 
 _DEFAULT_COLORS = {"free": 0x57F287, "free+": 0x5865F2, "premium": 0xFEE75C}
 CATEGORY_LABELS = {"free": "🟢 Free", "free+": "🔵 Free+", "premium": "⭐ Premium"}
+
+# Matches a reasonably well-formed http(s) URL: scheme, a domain with at
+# least one dot (or "localhost"), optional port, and an optional path/query
+# containing no whitespace or other characters that would break Discord's
+# URL parser.
+_URL_RE = re.compile(
+    r"^https?://"
+    r"(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}"
+    r"(?::\d+)?"
+    r"(?:[/?#][^\s]*)?$"
+)
+
+
+def is_valid_url(url) -> bool:
+    """
+    Validate that a string is a well-formed http(s) URL safe to use as a
+    Discord link-button (or embed image) URL.
+
+    Discord rejects the *entire* message payload with a 400 "Not a well
+    formed URL" error if a single button/embed URL is malformed, so any URL
+    sourced from external/account data must be validated before use.
+    """
+    if not url or not isinstance(url, str):
+        return False
+
+    url = url.strip()
+
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return False
+
+    # Reject whitespace and Discord-breaking characters (e.g. unescaped
+    # pipes, angle brackets, or control characters that can slip in from
+    # malformed account data).
+    if any(c.isspace() for c in url) or any(c in url for c in ("<", ">", "|")):
+        return False
+
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return False
+
+    if "." not in parsed.netloc and parsed.netloc.lower() != "localhost":
+        return False
+
+    return bool(_URL_RE.match(url))
 
 
 def _category_color(category: str) -> int:
@@ -227,9 +278,11 @@ class Generate(commands.Cog):
         banner_file = db.get_banner_file() if str(gen_image).startswith("local:") else None
         if banner_file:
             banner_url = f"attachment://{banner_file['name']}"
-        elif gen_image and gen_image.startswith("http"):
+        elif gen_image and is_valid_url(gen_image):
             banner_url = gen_image
         else:
+            if gen_image and not banner_file and str(gen_image).startswith("http"):
+                log.warning("Configured gen_image is not a well-formed URL, skipping: %r", gen_image)
             banner_url = None
 
         color         = _category_color(category)
@@ -264,6 +317,12 @@ class Generate(commands.Cog):
         for field in currency_fields[:3]:
             dm_embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
 
+        skin_link_valid = bool(skin_link) and is_valid_url(skin_link)
+        if skin_link and not skin_link_valid:
+            log.warning(
+                "Skipping Skin Link button — malformed URL in account data: %r", skin_link
+            )
+
         dm_embed.add_field(name="🔑 Login Credentials", value=f"```{credentials}```", inline=False)
         dm_embed.add_field(name="", value="━━━━━━━━━━━━━━━━━━", inline=False)
         if skin_link:
@@ -279,7 +338,7 @@ class Generate(commands.Cog):
                 custom_id="copy_creds", emoji="📋",
             ),
         ]
-        if skin_link:
+        if skin_link_valid:
             buttons.append(discord.ui.Button(
                 label="Copy Skin Link", style=discord.ButtonStyle.link,
                 url=skin_link, emoji="🎨",
