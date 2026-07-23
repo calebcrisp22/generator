@@ -37,11 +37,6 @@ HELP_SECTIONS = {
         ("`/drop viewstock`", "View drop pool counts"),
         ("`/dropcooldown`",   "Set/update drop interval"),
     ],
-    "💬 Vouches": [
-        ("`/vouch`",          "Leave a vouch for the service"),
-        ("`/vouches`",        "View recent vouches"),
-        ("`/deletevouch`",    "Delete a vouch by ID (owner)"),
-    ],
     "👤 Profile & Invites": [
         ("`/profile`",        "View your profile"),
         ("`/invites`",        "Check your invite count"),
@@ -211,7 +206,6 @@ class Utility(commands.Cog):
         app_commands.Choice(name="🎲 Generate",        value="🎲 Generate"),
         app_commands.Choice(name="📦 Stock",            value="📦 Stock (Owner)"),
         app_commands.Choice(name="🎁 Drops",            value="🎁 Drops (Owner)"),
-        app_commands.Choice(name="💬 Vouches",          value="💬 Vouches"),
         app_commands.Choice(name="👤 Profile & Invites", value="👤 Profile & Invites"),
         app_commands.Choice(name="🔔 Subscriptions",   value="🔔 Subscriptions"),
         app_commands.Choice(name="📊 Stats",            value="📊 Stats"),
@@ -287,7 +281,6 @@ class Utility(commands.Cog):
             "📦 Real-time stock management",
             "🎁 Automatic drops system",
             "👤 User profiles & invite tracking",
-            "💬 Community vouches",
             "🔔 Subscription tiers (Free, Free+, Premium)",
             "📊 Activity statistics & leaderboards",
             "⚙️ Full customization & admin controls",

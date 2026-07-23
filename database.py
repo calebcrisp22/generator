@@ -315,31 +315,6 @@ def clear_drop_stock(category: str = None) -> int:
     return count
 
 
-# ── vouches ───────────────────────────────────────────────────────────────────
-
-def add_vouch(user_id: str, content: str, stars: int) -> int:
-    vouches = _load("vouches.json", [])
-    new_id = (max((v["id"] for v in vouches), default=0)) + 1
-    vouches.insert(0, {
-        "id": new_id, "user_id": user_id, "content": content,
-        "stars": stars, "created_at": int(time.time())
-    })
-    _save("vouches.json", vouches)
-    return new_id
-
-
-def get_vouches(limit: int = 10) -> list:
-    return _load("vouches.json", [])[:limit]
-
-
-def delete_vouch(vouch_id: int) -> int:
-    vouches = _load("vouches.json", [])
-    before = len(vouches)
-    filtered = [v for v in vouches if v["id"] != vouch_id]
-    _save("vouches.json", filtered)
-    return before - len(filtered)
-
-
 # ── invites ───────────────────────────────────────────────────────────────────
 
 def add_invite_join(user_id: str, inviter_id: str, code: str) -> None:

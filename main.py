@@ -74,7 +74,6 @@ COGS = [
     "generate",
     "stock",
     "drops",
-    "vouches",
     "subscriptions",
     "admin",
     "profile",

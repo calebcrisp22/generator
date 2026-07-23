@@ -26,9 +26,6 @@ Python rewrite of the Discord account generator bot.
 | `/subscribe` | Owner | Grant a subscription |
 | `/unsubscribe` | Owner | Revoke a subscription |
 | `/subscription` | Everyone | Check subscription status |
-| `/vouch` | Everyone | Leave a vouch |
-| `/vouches` | Everyone | Show recent vouches |
-| `/deletevouch` | Owner | Delete a vouch |
 | `/drop setup` | Owner | Configure drop channel |
 | `/drop start` | Owner | Start auto-drops |
 | `/drop stop` | Owner | Stop auto-drops |
@@ -57,6 +54,5 @@ All data is stored as JSON files in `bot/data/` (or `$DATA_DIR` if set):
 - `users.json` — user records
 - `stock.json` — generate stock
 - `drop_stock.json` — drop-only stock
-- `vouches.json` — vouches list
 - `invite_joins.json` — invite tracking
 - `invites.json` — invite metadata
